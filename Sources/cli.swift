@@ -26,7 +26,7 @@ struct FluxTool: AsyncParsableCommand {
     var height: Int = 512
 
     @Option(name: .long, help: "Number of inference steps")
-    var steps: Int = 10
+    var steps: Int = 4
 
     @Option(name: .long, help: "Guidance scale")
     var guidance: Float = 3.5
