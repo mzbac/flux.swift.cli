@@ -26,7 +26,7 @@ struct FluxTool: AsyncParsableCommand {
     var height: Int = 512
 
     @Option(name: .long, help: "Number of inference steps")
-    var steps: Int = 4
+    var steps: Int = 10
 
     @Option(name: .long, help: "Guidance scale")
     var guidance: Float = 3.5
@@ -75,6 +75,7 @@ struct FluxTool: AsyncParsableCommand {
         parameters.height = height
         parameters.width = width
         parameters.prompt = prompt
+        parameters.numInferenceSteps = steps
         print("Starting image generation with parameters:")
         print("- Prompt: \(prompt)")
         print("- Dimensions: \(width)x\(height)")
