@@ -46,10 +46,29 @@ struct FluxTool: AsyncParsableCommand {
     @Flag(inversion: .prefixedNo, help: "Enable float16 precision (default: true)")
     var float16: Bool = true
     
+    @Option(name: .long, help: "FLUX model type (schnell or dev)")
+    var model: String = "schnell"
+
+    @Option(name: .long, help: "Hugging Face API token (required for dev model)")
+    var hfToken: String?
+
     func run() async throws {
         var progressBar: ProgressBar?
 
-        try await FluxConfiguration.flux1Schnell.download { progress in
+        let selectedModel: FluxConfiguration
+        switch model.lowercased() {
+        case "schnell":
+            selectedModel = FluxConfiguration.flux1Schnell
+        case "dev":
+            selectedModel = FluxConfiguration.flux1Dev
+            guard hfToken != nil else {
+                throw ValidationError("Hugging Face API token is required for the dev model. Please provide it using --hf-token option.")
+            }
+        default:
+            throw ValidationError("Invalid model type. Please choose 'schnell' or 'dev'.")
+        }
+
+        try await selectedModel.download(hub: model == "dev" ? HubApi(hfToken: hfToken!) : HubApi()) { progress in
             if progressBar == nil {
                 let complete = progress.fractionCompleted
                 if complete < 0.99 {
@@ -68,14 +87,10 @@ struct FluxTool: AsyncParsableCommand {
         }
         
         let loadConfiguration = LoadConfiguration(float16: float16, quantize: quantize)
-        let generator = try FluxConfiguration.flux1Schnell.textToImageGenerator(
-            configuration: loadConfiguration)
+        let generator = try selectedModel.textToImageGenerator(configuration: loadConfiguration)
         generator?.ensureLoaded()
-        var parameters = FluxConfiguration.flux1Schnell.defaultParameters()
-        parameters.height = height
-        parameters.width = width
-        parameters.prompt = prompt
-        parameters.numInferenceSteps = steps
+        var parameters = EvaluateParameters(numInferenceSteps: steps, width: width, height: height, prompt: prompt)
+
         print("Starting image generation with parameters:")
         print("- Prompt: \(prompt)")
         print("- Dimensions: \(width)x\(height)")
