@@ -54,6 +54,9 @@ struct FluxTool: AsyncParsableCommand {
   @Option(name: .long, help: "Hugging Face API token (required for dev model)")
   var hfToken: String?
 
+  @Option(name: .long, help: "Path to local LoRA weights file or Hugging Face repo id")
+  var loraPath: String?
+
   func run() async throws {
     var progressBar: ProgressBar?
     var token: String?
@@ -93,17 +96,31 @@ struct FluxTool: AsyncParsableCommand {
       progressBar?.setValue(complete)
     }
 
-    let loadConfiguration = LoadConfiguration(float16: float16, quantize: quantize)
-    let generator = try selectedModel.textToImageGenerator(configuration: loadConfiguration)
+    let loadConfiguration = LoadConfiguration(
+        float16: float16,
+        quantize: quantize,
+        loraPath: loraPath
+    )
+    let generator = try await selectedModel.textToImageGenerator(configuration: loadConfiguration)
     generator?.ensureLoaded()
-    let parameters = EvaluateParameters(
-        numInferenceSteps: steps, width: width, height: height, guidance: guidance, prompt: prompt, seed: seed)
+    let parameters: EvaluateParameters = EvaluateParameters(
+        width: width, height: height, numInferenceSteps: steps, guidance: guidance, seed: seed, prompt: prompt,  shiftSigmas: model.lowercased() == "dev" ? true : false)
 
     print("Starting image generation with parameters:")
     print("- Prompt: \(prompt)")
     print("- Dimensions: \(width)x\(height)")
     print("- Steps: \(steps)")
     print("- Guidance: \(guidance)")
+    print("- Model: \(model)")
+    if let seed {
+          print("- Seed: \(seed)")
+      }
+    print("- Float16: \(float16)")
+    print("- Quantize: \(quantize)")
+    if let loraPath = loraPath {
+        print("- LoRA: \(loraPath)")
+    }
+    print("- Output: \(output)")
 
     var denoiser = generator?.generateLatents(parameters: parameters)
     var lastXt: MLXArray!
