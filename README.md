@@ -41,6 +41,7 @@ Once extracted, run `flux.swift.cli` via the command line:
 --float16               # Enable float16 precision (default: true)
 --model <type>          # FLUX model type: "schnell" or "dev" (default: "schnell")
 --hf-token <token>      # Hugging Face API token (required for dev model)
+--lora-path <path>      # Path to the LORA adapter file
 ```
 
 ## Model Types
@@ -56,25 +57,74 @@ To use the FLUX.1 Dev model, you need a Hugging Face API token with "Read access
 ./flux --model dev --hf-token YOUR_HF_TOKEN --prompt "Your prompt here"
 ```
 
+## LORA Adapter
+
+FLUX.swift.cli now supports LORA (Low-Rank Adaptation) adapters for fine-tuned image generation. To use a LORA adapter:
+
+1. Find a compatible LORA adapter file (.safetensors format)
+2. Use the `--lora-path` option to specify the path to the LORA adapter file or the id of the adapter on Hugging Face
+
+Example:
+
+```bash
+./flux --prompt "A portrait in the style of Van Gogh" --lora-path /path/to/vangogh_lora.safetensors --output vangogh_portrait.png
+```
+
+Note: Ensure that the LORA adapter is compatible with the FLUX model you're using.
+
 ## Examples
 
 1. Generate an image using the default FLUX.1 Schnell model:
 
 ```bash
-./flux --prompt "A futuristic cityscape" --width 1024 --height 1024 --steps 10 --guidance 5.0 --output futuristic_city.png --quantize
+./flux \
+  --prompt "A futuristic cityscape" \
+  --width 1024 \
+  --height 1024 \
+  --steps 10 \
+  --guidance 5.0 \
+  --output futuristic_city.png \
+  --quantize
 ```
 ![Futuristic cityscape](images/futuristic_city.png)
 
 2. Generate an image using the FLUX.1 Dev model:
 
 ```bash
-./flux --model dev --hf-token YOUR_HF_TOKEN --prompt "An alien landscape" --width 768 --height 768 --steps 20 --guidance 5.0 --output alien_landscape.png --quantize
+./flux \
+  --model dev \
+  --hf-token YOUR_HF_TOKEN \
+  --prompt "An alien landscape" \
+  --width 768 \
+  --height 768 \
+  --steps 20 \
+  --guidance 5.0 \
+  --output alien_landscape.png \
+  --quantize
 ```
 ![Alien landscape](images/alien_landscape.png)
+
 3. Quick try with minimal parameters:
 
 ```bash
-./flux --prompt "A serene mountain lake" --quantize
+./flux \
+  --prompt "A serene mountain lake" \
+  --quantize
 ```
 ![Serene mountain lake](images/serene_mountain_lake.png)
 
+4. Generate an image using a LORA adapter:
+
+```bash
+./flux \
+  --prompt "GHIBSKY style, a cat on a windowsill gazing out at a starry night sky and distant city lights" \
+  -q \
+  --guidance 7.5 \
+  --lora-path aleksa-codes/flux-ghibsky-illustration \
+  --output ghibsky_cat.png \
+  --seed 2 \
+  --width 768 \
+  --height 1344
+```
+
+![GHIBSKY style cat](images/ghibsky_cat.png)
