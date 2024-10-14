@@ -76,7 +76,7 @@ struct FluxTool: AsyncParsableCommand {
     default:
       throw ValidationError("Invalid model type. Please choose 'schnell' or 'dev'.")
     }
-    
+
     try await selectedModel.download(hub: model == "dev" ? HubApi(hfToken: token) : HubApi()) {
       progress in
       if progressBar == nil {
@@ -97,14 +97,36 @@ struct FluxTool: AsyncParsableCommand {
     }
 
     let loadConfiguration = LoadConfiguration(
-        float16: float16,
-        quantize: quantize,
-        loraPath: loraPath
+      float16: float16,
+      quantize: quantize,
+      loraPath: loraPath
     )
-    let generator = try await selectedModel.textToImageGenerator(configuration: loadConfiguration)
+
+    if let loraPath = loadConfiguration.loraPath {
+      try await selectedModel.downloadLoraWeights(loadConfiguration: loadConfiguration) {
+        progress in
+        if progressBar == nil {
+          let complete = progress.fractionCompleted
+          if complete < 0.99 {
+            progressBar = ProgressBar(count: 1000)
+            if complete > 0 {
+              print("Resuming download (\(Int(complete * 100))% complete)")
+            } else {
+              print("Downloading lora weights for \(loraPath) model...")
+            }
+            print()
+          }
+        }
+
+        let complete = Int(progress.fractionCompleted * 1000)
+        progressBar?.setValue(complete)
+      }
+    }
+    let generator = try selectedModel.textToImageGenerator(configuration: loadConfiguration)
     generator?.ensureLoaded()
     let parameters: EvaluateParameters = EvaluateParameters(
-        width: width, height: height, numInferenceSteps: steps, guidance: guidance, seed: seed, prompt: prompt,  shiftSigmas: model.lowercased() == "dev" ? true : false)
+      width: width, height: height, numInferenceSteps: steps, guidance: guidance, seed: seed,
+      prompt: prompt, shiftSigmas: model.lowercased() == "dev" ? true : false)
 
     print("Starting image generation with parameters:")
     print("- Prompt: \(prompt)")
@@ -113,12 +135,12 @@ struct FluxTool: AsyncParsableCommand {
     print("- Guidance: \(guidance)")
     print("- Model: \(model)")
     if let seed {
-          print("- Seed: \(seed)")
-      }
+      print("- Seed: \(seed)")
+    }
     print("- Float16: \(float16)")
     print("- Quantize: \(quantize)")
     if let loraPath = loraPath {
-        print("- LoRA: \(loraPath)")
+      print("- LoRA: \(loraPath)")
     }
     print("- Output: \(output)")
 

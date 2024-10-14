@@ -1,13 +1,13 @@
 {
-  "originHash" : "319a63b0f9d34c830bd8d04c4ca6fac3bb805fc2d5f56078e43a0a5e0a1021a5",
+  "originHash" : "9b1fb9bebc197a289c0bf57cc4ca550c68a47e8a91862e644105f9dc28e31b43",
   "pins" : [
     {
       "identity" : "flux.swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mzbac/flux.swift.git",
       "state" : {
-        "revision" : "1a3d16328bef02a5e4d03349ee90b08b6f4e4524",
-        "version" : "0.1.3"
+        "branch" : "main",
+        "revision" : "e78b16484d1dcbe176d0689f5c44a9b8d5fb7306"
       }
     },
     {
