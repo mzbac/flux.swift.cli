@@ -158,7 +158,6 @@ struct FluxTool: AsyncParsableCommand {
     print("Decoding image...")
     let decoded = generator?.decode(xt: unpackedLatents)
     var imageData = decoded?.squeezed()
-    imageData = imageData!.transposed(1, 2, 0)
 
     print("Processing final image data...")
     let raster = (imageData! * 255).asType(.uint8)
@@ -197,7 +196,7 @@ struct FluxTool: AsyncParsableCommand {
 
   func unpackLatents(_ latents: MLXArray, height: Int, width: Int) -> MLXArray {
     let reshaped = latents.reshaped(1, height / 16, width / 16, 16, 2, 2)
-    let transposed = reshaped.transposed(0, 3, 1, 4, 2, 5)
-    return transposed.reshaped(1, 16, height / 16 * 2, width / 16 * 2)
+    let transposed = reshaped.transposed(0, 1, 4, 2, 5, 3)
+    return transposed.reshaped(1, height / 16 * 2, width / 16 * 2, 16)
   }
 }
