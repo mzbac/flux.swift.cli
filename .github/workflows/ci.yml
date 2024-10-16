@@ -31,7 +31,8 @@ jobs:
           cd ./dist/Build/Products/Release
           mv flux.swift.cli flux
           chmod +x flux
-          zip -r flux.zip flux mlx-swift_Cmlx.bundle
+          cp mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib .
+          zip -r flux.macos.arm64.zip flux default.metallib
 
       - name: Get current date
         run: echo "CURRENT_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
@@ -46,5 +47,5 @@ jobs:
           draft: false
           prerelease: true
           allowUpdates: true
-          artifacts: ./dist/Build/Products/Release/flux.zip
+          artifacts: ./dist/Build/Products/Release/flux.macos.arm64.zip
           token: ${{ secrets.GITHUB_TOKEN }}

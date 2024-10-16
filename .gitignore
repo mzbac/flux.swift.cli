@@ -8,4 +8,4 @@ DerivedData/
 .netrc
 .vscode
 .swiftpm
-./dist
+dist/*
