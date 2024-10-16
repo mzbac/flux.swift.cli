@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 16.0
+
+      - name: Enable PrepareMetalShaders plugin
+        run: defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidation -bool YES
+
+      - name: Build
+        run: |
+          xcodebuild build -scheme flux.swift.cli -configuration Release -destination 'platform=macOS' -derivedDataPath ./dist -skipPackagePluginValidation ENABLE_PLUGIN_PREPAREMLSHADERS=YES
+
+      - name: Rename and Prepare Artifacts
+        run: |
+          cd ./dist/Build/Products/Release
+          mv flux.swift.cli flux
+          chmod +x flux
+          zip -r flux.zip flux mlx-swift_Cmlx.bundle
+
+      - name: Get current date
+        run: echo "CURRENT_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        env:
+          CURRENT_DATE: ${{ env.CURRENT_DATE }}
+        with:
+          tag: nightly
+          name: "Nightly Build ${{ env.CURRENT_DATE }}"
+          draft: false
+          prerelease: true
+          allowUpdates: true
+          artifacts: ./dist/Build/Products/Release/flux.zip
+          token: ${{ secrets.GITHUB_TOKEN }}

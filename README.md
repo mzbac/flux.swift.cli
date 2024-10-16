@@ -15,7 +15,29 @@
 
 ## Installation
 
-Download the latest release from the [Releases](https://github.com/mzbac/flux.swift.cli/releases/tag/0.0.1) page as a `.zip` file and extract it to your desired location.
+### Download Pre-built Binary
+
+Download the latest release from the [Releases](https://github.com/mzbac/flux.swift.cli/releases) page as a `.zip` file and extract it to your desired location.
+
+### Build from Source
+
+If you prefer to build the project from source, follow these steps:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/mzbac/flux.swift.cli.git
+   cd flux.swift.cli
+   ```
+
+2. Build the project using `xcodebuild`:
+   ```bash
+   xcodebuild build -scheme flux.swift.cli -destination 'platform=macOS' -derivedDataPath ./dist
+   ```
+
+3. The built binary will be located in the `dist` directory. You can run it directly or move it to a location in your PATH:
+   ```bash
+   ./dist/Build/Products/Debug/flux.swift.cli
+   ```
 
 ## Usage
 
