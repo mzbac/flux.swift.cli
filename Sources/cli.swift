@@ -103,23 +103,25 @@ struct FluxTool: AsyncParsableCommand {
     )
 
     if let loraPath = loadConfiguration.loraPath {
-      try await selectedModel.downloadLoraWeights(loadConfiguration: loadConfiguration) {
-        progress in
-        if progressBar == nil {
-          let complete = progress.fractionCompleted
-          if complete < 0.99 {
-            progressBar = ProgressBar(count: 1000)
-            if complete > 0 {
-              print("Resuming download (\(Int(complete * 100))% complete)")
-            } else {
-              print("Downloading lora weights for \(loraPath) model...")
+      if !FileManager.default.fileExists(atPath: loraPath) {
+        try await selectedModel.downloadLoraWeights(loadConfiguration: loadConfiguration) {
+          progress in
+          if progressBar == nil {
+            let complete = progress.fractionCompleted
+            if complete < 0.99 {
+              progressBar = ProgressBar(count: 1000)
+              if complete > 0 {
+                print("Resuming download (\(Int(complete * 100))% complete)")
+              } else {
+                print("Downloading lora weights for \(loraPath) model...")
+              }
+              print()
             }
-            print()
           }
-        }
 
-        let complete = Int(progress.fractionCompleted * 1000)
-        progressBar?.setValue(complete)
+          let complete = Int(progress.fractionCompleted * 1000)
+          progressBar?.setValue(complete)
+        }
       }
     }
     let generator = try selectedModel.textToImageGenerator(configuration: loadConfiguration)
