@@ -166,6 +166,7 @@ Note: Ensure that the LORA adapter is compatible with the FLUX model you're usin
   --seed 43 \
   --guidance 3.5 \
   --height 512 \
-  --width 512 \
-  --quantize
+  --width 512 
 ```
+
+![Image to image generation](images/image_to_image.png)
