@@ -9,6 +9,7 @@
 ## Features
 
 - **Text-to-image generation**: Generate images from text prompts.
+- **Image-to-image generation**: Generate images using both text prompts and reference images.
 - **Customizable parameters**: Control image size, inference steps, guidance scale, and more.
 - **Model optimization**: Options for quantization and float16 precision.
 - **Multiple model support**: Choose between FLUX.1 Schnell and FLUX.1 Dev models.
@@ -64,6 +65,8 @@ Once extracted, run `flux.swift.cli` via the command line:
 --model <type>          # FLUX model type: "schnell" or "dev" (default: "schnell")
 --hf-token <token>      # Hugging Face API token (required for dev model)
 --lora-path <path>      # Path to the LORA adapter file
+--init-image-path <path>      # Path to the reference image for image-to-image generation
+--init-image-strength <float> # Strength of the initial image influence (0-1, default: 0.3)
 ```
 
 ## Model Types
@@ -150,3 +153,19 @@ Note: Ensure that the LORA adapter is compatible with the FLUX model you're usin
 ```
 
 ![GHIBSKY style cat](images/ghibsky_cat.png)
+
+5. Generate an image using a reference image:
+
+```bash
+./flux \
+  --model dev \
+  --prompt "Watercolor sketch of a tranquil mountain lake: a soft sun, pastel sky, subtle green pines, and delicate lines for distant snowy peaks." \
+  --init-image-path reference.png \
+  --init-image-strength 0.16 \
+  --steps 20 \
+  --seed 43 \
+  --guidance 3.5 \
+  --height 512 \
+  --width 512 \
+  --quantize
+```

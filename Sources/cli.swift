@@ -57,6 +57,12 @@ struct FluxTool: AsyncParsableCommand {
   @Option(name: .long, help: "Path to local LoRA weights file or Hugging Face repo id")
   var loraPath: String?
 
+  @Option(name: .long, help: "Path to initial image for image-to-image generation")
+  var initImagePath: String?
+
+  @Option(name: .long, help: "Strength of initial image (0.0 to 1.0)")
+  var initImageStrength: Float?
+
   func run() async throws {
     var progressBar: ProgressBar?
     var token: String?
@@ -124,11 +130,33 @@ struct FluxTool: AsyncParsableCommand {
         }
       }
     }
-    let generator = try selectedModel.textToImageGenerator(configuration: loadConfiguration)
-    generator?.ensureLoaded()
+
+    let generator: ImageGenerator?
+    var denoiser: DenoiseIterator?
+
     let parameters: EvaluateParameters = EvaluateParameters(
       width: width, height: height, numInferenceSteps: steps, guidance: guidance, seed: seed,
       prompt: prompt, shiftSigmas: model.lowercased() == "dev" ? true : false)
+
+    if let initImagePath = initImagePath {
+      generator = try selectedModel.ImageToImageGenerator(configuration: loadConfiguration)
+      generator?.ensureLoaded()
+
+      // Load and preprocess the input image
+      let image = try Image(url: URL(fileURLWithPath: initImagePath))
+      let input = (image.data.asType(.float32) / 255) * 2 - 1
+
+      let strength = initImageStrength ?? 0.3
+      denoiser = (generator as? ImageToImageGenerator)?.generateLatents(
+        image: input,
+        parameters: parameters,
+        strength: strength
+      )
+    } else {
+      generator = try selectedModel.textToImageGenerator(configuration: loadConfiguration)
+      generator?.ensureLoaded()
+      denoiser = (generator as? TextToImageGenerator)?.generateLatents(parameters: parameters)
+    }
 
     print("Starting image generation with parameters:")
     print("- Prompt: \(prompt)")
@@ -145,8 +173,11 @@ struct FluxTool: AsyncParsableCommand {
       print("- LoRA: \(loraPath)")
     }
     print("- Output: \(output)")
+    if let initImagePath {
+      print("- Init Image: \(initImagePath)")
+      print("- Init Image Strength: \(initImageStrength ?? 0.3)")
+    }
 
-    var denoiser = generator?.generateLatents(parameters: parameters)
     var lastXt: MLXArray!
     while let xt = denoiser!.next() {
       print("Step \(denoiser!.i)/\(parameters.numInferenceSteps)")
@@ -159,7 +190,7 @@ struct FluxTool: AsyncParsableCommand {
 
     print("Decoding image...")
     let decoded = generator?.decode(xt: unpackedLatents)
-    var imageData = decoded?.squeezed()
+    let imageData = decoded?.squeezed()
 
     print("Processing final image data...")
     let raster = (imageData! * 255).asType(.uint8)

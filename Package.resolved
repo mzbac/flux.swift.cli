@@ -7,7 +7,7 @@
       "location" : "https://github.com/mzbac/flux.swift.git",
       "state" : {
         "branch" : "main",
-        "revision" : "36ce31ee6e5eb618b6f65ff190ba540c09eac1ac"
+        "revision" : "0ccaa6397bbe5c24a288f7dd7910c1efda4a4cdd"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/maiqingqiang/Jinja",
       "state" : {
-        "revision" : "b435eb62b0d3d5f34167ec70a128355486981712",
-        "version" : "1.0.5"
+        "revision" : "6dbe4c449469fb586d0f7339f900f0dd4d78b167",
+        "version" : "1.0.6"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ml-explore/mlx-swift",
       "state" : {
-        "revision" : "78a7cfe6701d6e9c88e9d4a0d1f7990af84b2146",
-        "version" : "0.18.0"
+        "revision" : "70dbb62128a5a1471a5ab80363430adb33470cab",
+        "version" : "0.21.2"
       }
     },
     {
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/huggingface/swift-transformers",
       "state" : {
-        "revision" : "4d25d20e49d2269aec1556231f8e278db7b2a4f0",
-        "version" : "0.1.13"
+        "revision" : "d42fdae473c49ea216671da8caae58e102d28709",
+        "version" : "0.1.14"
       }
     }
   ],
