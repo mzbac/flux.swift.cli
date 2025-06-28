@@ -6,10 +6,12 @@ let package = Package(
   name: "flux.swift.cli",
   platforms: [.macOS(.v14), .iOS(.v16)],
   dependencies: [
-    .package(url: "https://github.com/mzbac/flux.swift.git", branch: "main"),
-    .package(url: "https://github.com/huggingface/swift-transformers", from: "0.1.13"),
+    .package(url: "https://github.com/mzbac/flux.swift", from: "0.1.6"),
+    .package(
+      url: "https://github.com/huggingface/swift-transformers", .upToNextMinor(from: "0.1.21")
+    ), 
     .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
-    .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
+    .package(url: "https://github.com/apple/swift-argument-parser", from: "1.4.0"),
     .package(url: "https://github.com/jkandzi/Progress.swift", from: "0.4.0"),
   ],
   targets: [

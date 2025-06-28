@@ -9,3 +9,6 @@ DerivedData/
 .vscode
 .swiftpm
 dist/*
+
+
+.claude

@@ -57,11 +57,8 @@ struct FluxTool: AsyncParsableCommand {
   @Option(name: .long, help: "Path to local LoRA weights file or Hugging Face repo id")
   var loraPath: String?
 
-  @Option(name: .long, help: "Path to initial image for image-to-image generation")
+  @Option(name: .long, help: "Path to initial image for image-to-image generation (Kontext model only)")
   var initImagePath: String?
-
-  @Option(name: .long, help: "Strength of initial image (0.0 to 1.0)")
-  var initImageStrength: Float?
 
   func run() async throws {
     var progressBar: ProgressBar?
@@ -79,11 +76,25 @@ struct FluxTool: AsyncParsableCommand {
         print(
           "Hugging Face token is not provided. Using default token from \(defaultTokenLocation)")
       }
+    case "kontext":
+      selectedModel = FluxConfiguration.flux1KontextDev
+      token = hfToken
+
+      if token == nil {
+        token = try? String(contentsOfFile: defaultTokenLocation, encoding: .utf8)
+        print(
+          "Hugging Face token is not provided. Using default token from \(defaultTokenLocation)")
+      }
     default:
-      throw ValidationError("Invalid model type. Please choose 'schnell' or 'dev'.")
+      throw ValidationError("Invalid model type. Please choose 'schnell', 'dev' or 'kontext'.")
+    }
+    
+    // Validate image-to-image is only used with kontext
+    if initImagePath != nil && model.lowercased() != "kontext" {
+      throw ValidationError("Image-to-image generation is only supported with the 'kontext' model. Use --model kontext")
     }
 
-    try await selectedModel.download(hub: model == "dev" ? HubApi(hfToken: token) : HubApi()) {
+    try await selectedModel.download(hub: (model == "dev" || model == "kontext") ? HubApi(hfToken: token) : HubApi()) {
       progress in
       if progressBar == nil {
         let complete = progress.fractionCompleted
@@ -132,28 +143,33 @@ struct FluxTool: AsyncParsableCommand {
     }
 
     let generator: ImageGenerator?
-    var denoiser: DenoiseIterator?
+    var denoiser: Any?
 
     let parameters: EvaluateParameters = EvaluateParameters(
       width: width, height: height, numInferenceSteps: steps, guidance: guidance, seed: seed,
-      prompt: prompt, shiftSigmas: model.lowercased() == "dev" ? true : false)
+      prompt: prompt, shiftSigmas: (model.lowercased() == "dev" || model.lowercased() == "kontext") ? true : false)
 
     if let initImagePath = initImagePath {
-      generator = try selectedModel.ImageToImageGenerator(configuration: loadConfiguration)
+      guard let kontextGenerator = try selectedModel.kontextImageToImageGenerator(hub: (model == "kontext") ? HubApi(hfToken: token) : HubApi(), configuration: loadConfiguration) else {
+        throw ValidationError("Failed to initialize Kontext image-to-image generator")
+      }
+      
+      generator = kontextGenerator
       generator?.ensureLoaded()
 
-      // Load and preprocess the input image
       let image = try Image(url: URL(fileURLWithPath: initImagePath))
-      let input = (image.data.asType(.float32) / 255) * 2 - 1
+      
+      let normalized = (image.data.asType(.float32) / 255) * 2 - 1
+      
 
-      let strength = initImageStrength ?? 0.3
-      denoiser = (generator as? ImageToImageGenerator)?.generateLatents(
+      let input = normalized
+
+      denoiser = kontextGenerator.generateKontextLatents(
         image: input,
-        parameters: parameters,
-        strength: strength
+        parameters: parameters
       )
     } else {
-      generator = try selectedModel.textToImageGenerator(configuration: loadConfiguration)
+      generator = try selectedModel.textToImageGenerator(hub: (model == "dev" || model == "kontext") ? HubApi(hfToken: token) : HubApi(), configuration: loadConfiguration)
       generator?.ensureLoaded()
       denoiser = (generator as? TextToImageGenerator)?.generateLatents(parameters: parameters)
     }
@@ -175,14 +191,26 @@ struct FluxTool: AsyncParsableCommand {
     print("- Output: \(output)")
     if let initImagePath {
       print("- Init Image: \(initImagePath)")
-      print("- Init Image Strength: \(initImageStrength ?? 0.3)")
+      if model.lowercased() == "kontext" {
+        print("- Mode: Kontext Image-to-Image")
+      }
     }
 
     var lastXt: MLXArray!
-    while let xt = denoiser!.next() {
-      print("Step \(denoiser!.i)/\(parameters.numInferenceSteps)")
-      eval(xt)
-      lastXt = xt
+    if let kontextDenoiser = denoiser as? KontextDenoiseIterator {
+      var iterator = kontextDenoiser
+      while let xt = iterator.next() {
+        print("Step \(iterator.i)/\(parameters.numInferenceSteps)")
+        eval(xt)
+        lastXt = xt
+      }
+    } else if let standardDenoiser = denoiser as? DenoiseIterator {
+      var iterator = standardDenoiser
+      while let xt = iterator.next() {
+        print("Step \(iterator.i)/\(parameters.numInferenceSteps)")
+        eval(xt)
+        lastXt = xt
+      }
     }
 
     print("Latent generation complete. Unpacking latents...")
